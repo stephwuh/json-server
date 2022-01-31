@@ -8,7 +8,7 @@ This is a mock backend server using Json-server to privoide the basic CURD for t
 
 > **2nd**: Under this repo, run: npm install
 
-> **3rd**: Start this json-server, run: npx json-server --watch db.json
+> **3rd**: Start this json-server, run: npm run start
 
 ### Run your json-server
 
