@@ -18,14 +18,14 @@ const getEventList = (async () => {
     const endDate = convertDate(event.endDate);
 
     tmp += `
-        <tr class="event-list__table-row">
+        <tr id=${event.id} class="event-list__table-row">
         <form>
           <td><input type="text" value=${event.eventName} disabled></td>
           <td><input type="date" value=${startDate} disabled></td>
           <td><input type="date" value=${endDate} disabled></td>
           <td><div>
-              <button>EDIT</button>
-              <button>DELETE</button>
+              <button class="event-list__btn_edit">EDIT</button>
+              <button disabled>DELETE</button>
           </div></td>
         </form>
         
@@ -76,8 +76,6 @@ class Event {
 
 const saveEvent = (() => {
   eventListContainer.addEventListener("click", async (event) => {
-    event.preventDefault();
-
     if (event.target.classList[0] === "event-list__btn_save") {
       const eventName = document.querySelector(".new-event-name").value;
 
@@ -95,9 +93,17 @@ const saveEvent = (() => {
 
       const event = new Event(eventName, startDate, endDate);
 
-      // console.log(event)
-
       await axios.post("http://localhost:3000/events", event);
+    }
+  });
+})();
+
+const editEvent = (() => {
+  eventListContainer.addEventListener("click", async (event) => {
+    if (event.target.classList[0] === "event-list__btn_edit") {
+      event.target.nextElementSibling.removeAttribute("disabled");
+
+      console.log(event.target.parentNode);
     }
   });
 })();
