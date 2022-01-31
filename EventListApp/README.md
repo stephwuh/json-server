@@ -30,4 +30,3 @@ Implement the EventLIstApp under the EventLIstApp folder.
 
 > **5**: You can use html built-in 'date picker' (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/date) to collect the date input data.
 
-> **6**: Try to add proper error handling and notification for any operation on the frontend, e.g., alert when created new event successfully, alert when failed to update the event ,etc.(bonus point)
