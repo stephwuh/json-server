@@ -13,7 +13,7 @@
     
     <main class="event-list">
       <header class="event-list__header">
-        <button>ADD NEW</button>
+        <button class="event-list__addBtn">ADD NEW</button>
       </header>
 
 
@@ -35,6 +35,18 @@
             <td><div>
                 <button>EDIT</button>
                 <button>DELETE</button>
+            </div></td>
+          </form>
+          
+        </tr>
+        <tr class="event-list__table-row event-list__table-row_add">
+          <form>
+            <td><input class="new-event-name" type="text"></td>
+            <td><input class="new-event-start-date" type="date"></td>
+            <td><input class="new-event-end-date" type="date"></td>
+            <td><div>
+                <button class="event-list__btn_save">SAVE</button>
+                <button class="event-list__btn_close">CLOSE</button>
             </div></td>
           </form>
           

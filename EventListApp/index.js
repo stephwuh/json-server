@@ -1,30 +1,23 @@
-
-
-
+const eventListContainer = document.querySelector(
+  ".event-list__entry-container"
+);
 
 const getEventList = (async () => {
+  let response = await axios.get("http://localhost:3000/events");
 
-    let response = await axios.get("http://localhost:3000/events");
-  
-    const eventListContainer = document.querySelector(".event-list__entry-container");
+  let tmp = "";
 
-  
-    let tmp = "";
+  const convertDate = (unixDate) => {
+    const date = new Date(+unixDate);
 
-    const convertDate = (unixDate)=>{
+    return date.toISOString().split("").splice(0, 10).join("");
+  };
 
-        const startDate = new Date(unixDate/1000)
-    
-        return startDate.toISOString().split("").splice(0,10).join("")
-    
-    }
-  
-    response.data.forEach((event) => {
+  response.data.forEach((event) => {
+    const startDate = convertDate(event.startDate);
+    const endDate = convertDate(event.endDate);
 
-        const startDate = convertDate(event.startDate);
-        const endDate = convertDate(event.endDate)
-
-        tmp += `
+    tmp += `
         <tr class="event-list__table-row">
         <form>
           <td><input type="text" value=${event.eventName} disabled></td>
@@ -38,17 +31,73 @@ const getEventList = (async () => {
         
       </tr>
       `;
-      
+  });
 
-    //   tmp += `
-    //   <li>
-    //       <span class="todo-list__item todo-list__item_completed" id="${todo.id}">${todo.title}</span
-    //       ><span class="todo-list__delete" id="${todo.id}">x</span>
-    //   </li>
-//   `;
-      
-  
-    });
-  
-    eventListContainer.innerHTML = tmp;
-  })()
+  eventListContainer.innerHTML = tmp;
+})();
+
+const addEvent = (() => {
+  const addBtn = document.querySelector(".event-list__addBtn");
+
+  const tableRow = document.createElement("tr");
+  tableRow.className = "event-list__table-row event-list__table-row_add";
+  tableRow.innerHTML = `
+    <form>
+            <td><input class="new-event-name" type="text"></td>
+            <td><input class="new-event-start-date" type="date"></td>
+            <td><input class="new-event-end-date" type="date"></td>
+            <td><div>
+                <button class="event-list__btn_save">SAVE</button>
+                <button class="event-list__btn_close">CLOSE</button>
+            </div></td>
+          </form>
+    `;
+
+  addBtn.addEventListener("click", () => {
+    eventListContainer.appendChild(tableRow);
+  });
+})();
+
+const closeEvent = (() => {
+  eventListContainer.addEventListener("click", (event) => {
+    if (event.target.classList[0] === "event-list__btn_close") {
+      eventListContainer.removeChild(eventListContainer.lastChild);
+    }
+  });
+})();
+
+class Event {
+  constructor(eventName, startDate, endDate) {
+    this.eventName = eventName;
+    this.startDate = startDate;
+    this.endDate = endDate;
+  }
+}
+
+const saveEvent = (() => {
+  eventListContainer.addEventListener("click", async (event) => {
+    event.preventDefault();
+
+    if (event.target.classList[0] === "event-list__btn_save") {
+      const eventName = document.querySelector(".new-event-name").value;
+
+      let startDate = new Date(
+        document.querySelector(".new-event-start-date").value
+      )
+        .getTime()
+        .toString();
+
+      let endDate = new Date(
+        document.querySelector(".new-event-end-date").value
+      )
+        .getTime()
+        .toString();
+
+      const event = new Event(eventName, startDate, endDate);
+
+      // console.log(event)
+
+      await axios.post("http://localhost:3000/events", event);
+    }
+  });
+})();
