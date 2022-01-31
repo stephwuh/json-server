@@ -1,3 +1,4 @@
+
 const eventListContainer = document.querySelector(
   ".event-list__entry-container"
 );
@@ -25,7 +26,7 @@ const getEventList = (async () => {
           <td><input type="date" value=${endDate} disabled></td>
           <td><div>
               <button class="event-list__btn_edit">EDIT</button>
-              <button disabled>DELETE</button>
+              <button id=${event.id} class="event-list__btn_delete">DELETE</button>
           </div></td>
         </form>
         
@@ -98,12 +99,26 @@ const saveEvent = (() => {
   });
 })();
 
-const editEvent = (() => {
-  eventListContainer.addEventListener("click", async (event) => {
-    if (event.target.classList[0] === "event-list__btn_edit") {
-      event.target.nextElementSibling.removeAttribute("disabled");
+const deleteEvent = (()=>{
+    eventListContainer.addEventListener("click", async(event)=>{
 
-      console.log(event.target.parentNode);
-    }
-  });
-})();
+
+
+        if (event.target.classList[0] === "event-list__btn_delete") {
+            const buttonId = event.target.getAttribute("id")
+
+            await axios.delete(`http://localhost:3000/events/${buttonId}`)
+
+
+          }
+
+    })
+})()
+
+// const editEvent = (() => {
+//   eventListContainer.addEventListener("click", async (event) => {
+//     if (event.target.classList[0] === "event-list__btn_edit") {
+//      eventListContainer.removeChild()
+//     }
+//   });
+// })();
