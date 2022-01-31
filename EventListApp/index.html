@@ -3,9 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./index.css">
+    <script defer src="index.js" type="module" ></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <title>EventList</title>
   </head>
   <body>
-    <h1>Stephen</h1>
-  </body>
+    
+    
+    <main class="event-list">
+      <header class="event-list__header">
+        <button>ADD NEW</button>
+      </header>
+
+
+      <table class="event-list__table">
+        <thead>
+          <tr class="event-list__table-row event-list__table-row-header">
+            <th>Event name</th>
+            <th>Start date</th>
+            <th>End date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+       <tbody class="event-list__entry-container">
+        <tr class="event-list__table-row">
+          <form>
+            <td><input type="text" value="TEST-3" disabled></td>
+            <td><input type="date" value="2020-12-01" disabled></td>
+            <td><input type="date" value="2020-12-01" disabled></td>
+            <td><div>
+                <button>EDIT</button>
+                <button>DELETE</button>
+            </div></td>
+          </form>
+          
+        </tr>
+      </tbody>
+      </table>
+    </main>
+   
+  </main>
+</body>
 </html>
