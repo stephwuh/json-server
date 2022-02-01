@@ -6,6 +6,7 @@ const eventListContainer = document.querySelector(
 );
 
 const getEventList = (async (appApi, convertDate) => {
+  //events from JSON server
   const events = await appApi.getEvents();
 
   let tmp = "";
@@ -20,7 +21,7 @@ const getEventList = (async (appApi, convertDate) => {
           <td><input type="text" class="event-list__name-${event.id}" value=${event.eventName} disabled></td>
           <td><input type="date" class="event-list__start-date-${event.id}" value=${startDate} disabled></td>
           <td><input type="date" class="event-list__end-date-${event.id}" value=${endDate} disabled></td>
-          <td><div>
+          <td><div class="button-container-${event.id}"> 
               <button id=${event.id} class="event-list__btn_edit">EDIT</button>
               <button id=${event.id} class="event-list__btn_delete">DELETE</button>
           </div></td>
@@ -36,6 +37,7 @@ const getEventList = (async (appApi, convertDate) => {
 const addEvent = (() => {
   const addBtn = document.querySelector(".event-list__addBtn");
 
+  //creating a table row for new event
   const tableRow = document.createElement("tr");
   tableRow.className = "event-list__table-row event-list__table-row_add";
   tableRow.innerHTML = `
@@ -58,7 +60,40 @@ const addEvent = (() => {
 const closeEvent = (() => {
   eventListContainer.addEventListener("click", (event) => {
     if (event.target.classList[0] === "event-list__btn_close") {
-      eventListContainer.removeChild(eventListContainer.lastChild);
+      //code for pre-existing event
+      if (event.target.getAttribute("id")) {
+        window.location.reload();
+
+        // const buttonContainer = (document.querySelector(
+        //   `.button-container-${event.target.getAttribute("id")}`
+        // ).innerHTML = `
+        //       <button id=${event.target.getAttribute(
+        //         "id"
+        //       )} class="event-list__btn_edit">EDIT</button>
+        //       <button id=${event.target.getAttribute(
+        //         "id"
+        //       )} class="event-list__btn_delete">DELETE</button>
+        //         `);
+
+        // const eventName = document
+        //   .querySelector(`.event-list__name-${event.target.getAttribute("id")}`)
+        //   .setAttribute("disabled", true);
+
+        // const startDate = document
+        //   .querySelector(
+        //     `.event-list__start-date-${event.target.getAttribute("id")}`
+        //   )
+        //   .setAttribute("disabled", true);
+
+        // const endDate = document
+        //   .querySelector(
+        //     `.event-list__end-date-${event.target.getAttribute("id")}`
+        //   )
+        //   .setAttribute("disabled", true);
+      } else {
+        //code for new event
+        eventListContainer.removeChild(eventListContainer.lastChild);
+      }
     }
   });
 })();
@@ -74,23 +109,56 @@ class Event {
 const saveEvent = ((appApi, convertDate) => {
   eventListContainer.addEventListener("click", async (event) => {
     if (event.target.classList[0] === "event-list__btn_save") {
-      const eventName = document.querySelector(".new-event-name").value;
+      // code for updating event
+      if (event.target.getAttribute("id")) {
+        const eventName = document.querySelector(
+          `.event-list__name-${event.target.getAttribute("id")}`
+        ).value;
 
-      let startDate = convertDate(
-        document.querySelector(".new-event-start-date").value
-      );
+        const startDate = convertDate(
+          document.querySelector(
+            `.event-list__start-date-${event.target.getAttribute("id")}`
+          ).value
+        );
 
-      let endDate = convertDate(
-        document.querySelector(".new-event-end-date").value
-      );
+        const endDate = convertDate(
+          document.querySelector(
+            `.event-list__end-date-${event.target.getAttribute("id")}`
+          ).value
+        );
 
-      if (!eventName || !startDate || !endDate) {
-        alert("Input all of the required fields");
-        return;
+        if (!eventName || !+startDate || !+endDate) {
+          alert("Input all of the required fields");
+          return;
+        }
+
+        const updateEvent = {
+          eventName,
+          startDate,
+          endDate,
+          id: event.target.getAttribute("id"),
+        };
+        appApi.updateEvent(updateEvent);
+      } else {
+        //code for saving new event
+        const eventName = document.querySelector(".new-event-name").value;
+
+        let startDate = convertDate(
+          document.querySelector(".new-event-start-date").value
+        );
+
+        let endDate = convertDate(
+          document.querySelector(".new-event-end-date").value
+        );
+
+        if (!eventName || !+startDate || !+endDate) {
+          alert("Input all of the required fields");
+          return;
+        }
+        const event = new Event(eventName, startDate, endDate);
+
+        await appApi.saveEvent(event);
       }
-      const event = new Event(eventName, startDate, endDate);
-
-      await appApi.saveEvent(event);
     }
   });
 })(appApi, toUnixDate);
@@ -105,4 +173,32 @@ const deleteEvent = ((appApi) => {
   });
 })(appApi);
 
+const editEvent = (() => {
+  eventListContainer.addEventListener("click", async (event) => {
+    if (event.target.classList[0] === "event-list__btn_edit") {
+      const buttonId = event.target.getAttribute("id");
 
+      const eventName = document
+        .getElementById(buttonId)
+        .querySelector(`.event-list__name-${buttonId}`)
+        .removeAttribute("disabled");
+
+      const startDate = document
+        .getElementById(buttonId)
+        .querySelector(`.event-list__start-date-${buttonId}`)
+        .removeAttribute("disabled");
+
+      const endDate = document
+        .getElementById(buttonId)
+        .querySelector(`.event-list__end-date-${buttonId}`)
+        .removeAttribute("disabled");
+
+      const buttonContainer = (document.querySelector(
+        `.button-container-${buttonId}`
+      ).innerHTML = `
+        <button id=${buttonId} class="event-list__btn_save">SAVE</button>
+         <button id=${buttonId} class="event-list__btn_close">CLOSE</button>
+        `);
+    }
+  });
+})();
