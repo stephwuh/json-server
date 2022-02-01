@@ -1,31 +1,27 @@
+import { appApi } from "./appApi.js";
+import { fromUnixDate, toUnixDate } from "./utils.js";
 
 const eventListContainer = document.querySelector(
   ".event-list__entry-container"
 );
 
-const getEventList = (async () => {
-  let response = await axios.get("http://localhost:3000/events");
+const getEventList = (async (appApi, convertDate) => {
+  const events = await appApi.getEvents();
 
   let tmp = "";
 
-  const convertDate = (unixDate) => {
-    const date = new Date(+unixDate);
-
-    return date.toISOString().split("").splice(0, 10).join("");
-  };
-
-  response.data.forEach((event) => {
+  events.forEach((event) => {
     const startDate = convertDate(event.startDate);
     const endDate = convertDate(event.endDate);
 
     tmp += `
         <tr id=${event.id} class="event-list__table-row">
         <form>
-          <td><input type="text" value=${event.eventName} disabled></td>
-          <td><input type="date" value=${startDate} disabled></td>
-          <td><input type="date" value=${endDate} disabled></td>
+          <td><input type="text" class="event-list__name-${event.id}" value=${event.eventName} disabled></td>
+          <td><input type="date" class="event-list__start-date-${event.id}" value=${startDate} disabled></td>
+          <td><input type="date" class="event-list__end-date-${event.id}" value=${endDate} disabled></td>
           <td><div>
-              <button class="event-list__btn_edit">EDIT</button>
+              <button id=${event.id} class="event-list__btn_edit">EDIT</button>
               <button id=${event.id} class="event-list__btn_delete">DELETE</button>
           </div></td>
         </form>
@@ -35,7 +31,7 @@ const getEventList = (async () => {
   });
 
   eventListContainer.innerHTML = tmp;
-})();
+})(appApi, fromUnixDate);
 
 const addEvent = (() => {
   const addBtn = document.querySelector(".event-list__addBtn");
@@ -75,50 +71,38 @@ class Event {
   }
 }
 
-const saveEvent = (() => {
+const saveEvent = ((appApi, convertDate) => {
   eventListContainer.addEventListener("click", async (event) => {
     if (event.target.classList[0] === "event-list__btn_save") {
       const eventName = document.querySelector(".new-event-name").value;
 
-      let startDate = new Date(
+      let startDate = convertDate(
         document.querySelector(".new-event-start-date").value
-      )
-        .getTime()
-        .toString();
+      );
 
-      let endDate = new Date(
+      let endDate = convertDate(
         document.querySelector(".new-event-end-date").value
-      )
-        .getTime()
-        .toString();
+      );
 
+      if (!eventName || !startDate || !endDate) {
+        alert("Input all of the required fields");
+        return;
+      }
       const event = new Event(eventName, startDate, endDate);
 
-      await axios.post("http://localhost:3000/events", event);
+      await appApi.saveEvent(event);
     }
   });
-})();
+})(appApi, toUnixDate);
 
-const deleteEvent = (()=>{
-    eventListContainer.addEventListener("click", async(event)=>{
+const deleteEvent = ((appApi) => {
+  eventListContainer.addEventListener("click", async (event) => {
+    if (event.target.classList[0] === "event-list__btn_delete") {
+      const buttonId = event.target.getAttribute("id");
+
+      await appApi.deleteEvent(buttonId);
+    }
+  });
+})(appApi);
 
 
-
-        if (event.target.classList[0] === "event-list__btn_delete") {
-            const buttonId = event.target.getAttribute("id")
-
-            await axios.delete(`http://localhost:3000/events/${buttonId}`)
-
-
-          }
-
-    })
-})()
-
-// const editEvent = (() => {
-//   eventListContainer.addEventListener("click", async (event) => {
-//     if (event.target.classList[0] === "event-list__btn_edit") {
-//      eventListContainer.removeChild()
-//     }
-//   });
-// })();
