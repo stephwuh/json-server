@@ -58,16 +58,20 @@ const getEventList = async (appApi, convertDate) => {
     `;
   });
 
+  if (pageNumber === 1) {
+    previousPageBtn.setAttribute("disabled", "true");
+  } else {
+    previousPageBtn.removeAttribute("disabled");
+  }
+
+  if (pageNumber === renderEventArr.length) {
+    nextPageBtn.setAttribute("disabled", "true");
+  } else {
+    nextPageBtn.removeAttribute("disabled");
+  }
+
   eventListContainer.innerHTML = tmpEvent;
   paginationContainer.innerHTML = tmpPagination;
-
-  // if(pageNumber===lastPageNumber){
-  //   nextPageBtn.setAttribute("disabled", true)
-  // }
-
-  // if(pageNumber===1){
-  //   previousPageBtn.setAttribute("disabled", "true")
-  // }
 };
 
 getEventList(appApi, fromUnixDate);
