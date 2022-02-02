@@ -4,18 +4,39 @@ import { fromUnixDate, toUnixDate } from "./utils.js";
 const eventListContainer = document.querySelector(
   ".event-list__entry-container"
 );
+const paginationContainer = document.querySelector(".event-list__pagination");
+const nextPageBtn = document.querySelector(".event-list__next-page-button");
+const previousPageBtn = document.querySelector(
+  ".event-list__previous-page-button"
+);
 
-const getEventList = (async (appApi, convertDate) => {
+let pageNumber = 1;
+// let lastPageNumber;
+
+const getEventList = async (appApi, convertDate) => {
   //events from JSON server
   const events = await appApi.getEvents();
 
-  let tmp = "";
+  let tmpEvent = "";
+  let tmpPagination = "";
 
-  events.forEach((event) => {
+  let pagesNeeded = Math.ceil(events.length / 4);
+
+  let renderEventArr = [];
+
+  for (let i = 1; i <= pagesNeeded; i++) {
+    let startIndex = (i - 1) * 4;
+
+    renderEventArr.push(events.slice(startIndex, startIndex + 4));
+  }
+
+  // lastPageNumber = renderEventArr.length;
+
+  renderEventArr[pageNumber - 1].forEach((event) => {
     const startDate = convertDate(event.startDate);
     const endDate = convertDate(event.endDate);
 
-    tmp += `
+    tmpEvent += `
         <tr id=${event.id} class="event-list__table-row">
         <form>
           <td><input type="text" class="event-list__name-${event.id}" value=${event.eventName} disabled></td>
@@ -31,8 +52,49 @@ const getEventList = (async (appApi, convertDate) => {
       `;
   });
 
-  eventListContainer.innerHTML = tmp;
-})(appApi, fromUnixDate);
+  renderEventArr.forEach((event, index) => {
+    tmpPagination += `
+    <a class="event-list_pagination-page-number">${index + 1}</a>
+    `;
+  });
+
+  eventListContainer.innerHTML = tmpEvent;
+  paginationContainer.innerHTML = tmpPagination;
+
+  // if(pageNumber===lastPageNumber){
+  //   nextPageBtn.setAttribute("disabled", true)
+  // }
+
+  // if(pageNumber===1){
+  //   previousPageBtn.setAttribute("disabled", "true")
+  // }
+};
+
+getEventList(appApi, fromUnixDate);
+
+const pagination = (() => {
+  const paginationContainer = document.querySelector(".event-list__pagination");
+
+  paginationContainer.addEventListener("click", (event) => {
+    pageNumber = +event.target.innerHTML;
+    getEventList(appApi, fromUnixDate);
+  });
+})();
+
+const nextPage = (() => {
+  nextPageBtn.addEventListener("click", () => {
+    pageNumber++;
+    getEventList(appApi, fromUnixDate);
+  });
+})();
+
+const previousPage = (() => {
+  previousPageBtn.addEventListener("click", () => {
+    pageNumber--;
+
+    getEventList(appApi, fromUnixDate);
+  });
+})();
 
 const addEvent = (() => {
   const addBtn = document.querySelector(".event-list__addBtn");
