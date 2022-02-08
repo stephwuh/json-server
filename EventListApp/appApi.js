@@ -13,8 +13,8 @@ export const appApi = (() => {
     await axios.delete(`http://localhost:3000/events/${id}`);
   };
 
-  const updateEvent = async (event) => {
-    await axios.put(`http://localhost:3000/events/${event.id}`, event);
+  const updateEvent = async (event, id) => {
+    await axios.put(`http://localhost:3000/events/${id}`, event);
   };
 
   return {

@@ -7,6 +7,9 @@ const View = ((convertDate) => {
   const domstr = {
     eventList: ".event-list__entry-container",
     addBtn: ".event-list__addBtn",
+    pagination: ".event-list__pagination",
+    nextPageBtn: ".event-list__next-page-button",
+    previousPageBtn: ".event-list__previous-page-button",
   };
   const render = (element, tmp) => {
     element.innerHTML = tmp;
@@ -16,7 +19,7 @@ const View = ((convertDate) => {
     arr.forEach((ele) => {
       tmp += `
               <tr id=${ele.id} class="event-list__table-row">
-              <form>
+
                 <td><input type="text" class="event-list__name-${
                   ele.id
                 }" value=${ele.eventName} disabled></td>
@@ -34,7 +37,7 @@ const View = ((convertDate) => {
                       ele.id
                     } class="event-list__btn_delete">DELETE</button>
                 </div></td>
-              </form>
+         
               
             </tr>
             `;
@@ -42,19 +45,31 @@ const View = ((convertDate) => {
     return tmp;
   };
 
+  const paginationTmp = (num) => {
+    let tmp = "";
+
+    for (let i = 0; i < num; i++) {
+      tmp += `
+      <a class="event-list_pagination-page-number">${i + 1}</a>
+      `;
+    }
+
+    return tmp;
+  };
+
   const addRowTmp = () => {
     return `
-    <tr class="event-list__table-row event-list__table-row_add">
-      <td><input class="new-event-name" type="text"></td>
-      <td><input class="new-event-start-date" type="date"></td>
-      <td><input class="new-event-end-date" type="date"></td>
+
+      <td><input class="event-list__name-new" type="text"></td>
+      <td><input class="event-list__start-date-new" type="date"></td>
+      <td><input class="event-list__end-date-new" type="date"></td>
       <td>
         <div>
-          <button class="event-list__btn_save">SAVE</button>
-          <button class="event-list__btn_close">CLOSE</button>
+          <button id="new" class="event-list__btn_save">SAVE</button>
+          <button id="new" class="event-list__btn_close">CLOSE</button>
         </div>
       </td>
-    </tr>
+
     `;
   };
 
@@ -65,20 +80,27 @@ const View = ((convertDate) => {
     `;
   };
 
+  const editDeleteBtnTmp = (id) => {
+    return `
+      <button id=${id} class="event-list__btn_edit">EDIT</button>
+      <button id=${id} class="event-list__btn_delete">DELETE</button>
+    `;
+  };
+
   return {
     domstr,
     render,
     createTmp,
     addRowTmp,
     saveCloseBtnTmp,
+    editDeleteBtnTmp,
+    paginationTmp,
   };
 })(fromUnixDate);
 
 //Model
 
 const Model = ((appApi, view) => {
-  let pageNumber = 1;
-
   class Event {
     constructor(eventName, startDate, endDate) {
       this.eventName = eventName;
@@ -89,6 +111,9 @@ const Model = ((appApi, view) => {
 
   class State {
     #eventList = [];
+
+    static pageNumber = 1;
+    static pagesNeeded = 1;
 
     get eventList() {
       return this.#eventList;
@@ -101,11 +126,20 @@ const Model = ((appApi, view) => {
       const tmp = view.createTmp(this.#eventList);
       view.render(ele, tmp);
     }
+
+    set pagination(pages) {
+      this.pagesNeeded = pages;
+
+      const ele = document.querySelector(view.domstr.pagination);
+      const tmp = view.paginationTmp(this.pagesNeeded);
+      view.render(ele, tmp);
+    }
   }
 
   const getEvents = appApi.getEvents;
   const deleteEvent = appApi.deleteEvent;
   const saveEvent = appApi.saveEvent;
+  const updateEvent = appApi.updateEvent;
 
   return {
     Event,
@@ -113,6 +147,7 @@ const Model = ((appApi, view) => {
     getEvents,
     deleteEvent,
     saveEvent,
+    updateEvent,
   };
 })(appApi, View);
 
@@ -122,17 +157,45 @@ const Controller = ((model, view, convertDate) => {
   const state = new model.State();
 
   const eventListContainer = document.querySelector(view.domstr.eventList);
+  const nextPageBtn = document.querySelector(view.domstr.nextPageBtn);
+  const previousPageBtn = document.querySelector(view.domstr.previousPageBtn);
 
   const init = async () => {
-    let response = await model.getEvents();
-    state.eventList = response;
+    let events = await model.getEvents();
+
+    let pagesNeeded = Math.ceil(events.length / 4);
+
+    let renderEventArr = [];
+
+    for (let i = 1; i <= pagesNeeded; i++) {
+      let startIndex = (i - 1) * 4;
+
+      renderEventArr.push(events.slice(startIndex, startIndex + 4));
+    }
+
+    state.eventList = renderEventArr[model.State.pageNumber - 1];
+
+    state.pagination = pagesNeeded;
+
+    if (model.State.pageNumber === renderEventArr.length) {
+      nextPageBtn.setAttribute("disabled", "true");
+    } else {
+      nextPageBtn.removeAttribute("disabled");
+    }
+
+    if (model.State.pageNumber === 1) {
+      previousPageBtn.setAttribute("disabled", "true");
+    } else {
+      previousPageBtn.removeAttribute("disabled");
+    }
   };
 
   const addEvent = () => {
     const addBtn = document.querySelector(view.domstr.addBtn);
 
     const tableRow = document.createElement("tr");
-    tableRow.className = "event-list__table-row event-list__table-row_add";
+    tableRow.className = "event-list__table-row";
+    tableRow.id = "new";
     tableRow.innerHTML = view.addRowTmp();
 
     addBtn.addEventListener("click", () => {
@@ -142,9 +205,33 @@ const Controller = ((model, view, convertDate) => {
 
   const closeEvent = () => {
     eventListContainer.addEventListener("click", (event) => {
-      if (event.target.classList[0] === "event-list__btn_close") {
-        eventListContainer.removeChild(eventListContainer.lastChild);
-      }
+      if (event.target.classList[0] === "event-list__btn_close")
+        if (event.target.getAttribute("id") === "new") {
+          //code for pre-existing event
+          eventListContainer.removeChild(eventListContainer.lastChild);
+        } else {
+          document.querySelector(
+            `.button-container-${event.target.getAttribute("id")}`
+          ).innerHTML = view.editDeleteBtnTmp(event.target.getAttribute("id"));
+
+          document
+            .querySelector(
+              `.event-list__name-${event.target.getAttribute("id")}`
+            )
+            .setAttribute("disabled", true);
+
+          document
+            .querySelector(
+              `.event-list__start-date-${event.target.getAttribute("id")}`
+            )
+            .setAttribute("disabled", true);
+
+          document
+            .querySelector(
+              `.event-list__end-date-${event.target.getAttribute("id")}`
+            )
+            .setAttribute("disabled", true);
+        }
     });
   };
 
@@ -164,67 +251,34 @@ const Controller = ((model, view, convertDate) => {
   const saveEvent = () => {
     eventListContainer.addEventListener("click", (event) => {
       if (event.target.classList[0] === "event-list__btn_save") {
-        
-            // code for updating event
-//       if (event.target.getAttribute("id")) {
-//         const eventName = document.querySelector(
-//           `.event-list__name-${event.target.getAttribute("id")}`
-//         ).value;
+        const eventName = document.querySelector(
+          `.event-list__name-${event.target.getAttribute("id")}`
+        ).value;
 
-//         const startDate = convertDate(
-//           document.querySelector(
-//             `.event-list__start-date-${event.target.getAttribute("id")}`
-//           ).value
-//         );
-
-//         const endDate = convertDate(
-//           document.querySelector(
-//             `.event-list__end-date-${event.target.getAttribute("id")}`
-//           ).value
-//         );
-
-//         if (!eventName || !+startDate || !+endDate) {
-//           alert("Input all of the required fields");
-//           return;
-//         }
-
-//         const updateEvent = {
-//           eventName,
-//           startDate,
-//           endDate,
-//           id: event.target.getAttribute("id"),
-//         };
-//         appApi.updateEvent(updateEvent);
-//       }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        const eventName = document.querySelector(".new-event-name").value;
-
-        let startDate = convertDate(
-          document.querySelector(".new-event-start-date").value
+        const startDate = convertDate(
+          document.querySelector(
+            `.event-list__start-date-${event.target.getAttribute("id")}`
+          ).value
         );
 
-        let endDate = convertDate(
-          document.querySelector(".new-event-end-date").value
+        const endDate = convertDate(
+          document.querySelector(
+            `.event-list__end-date-${event.target.getAttribute("id")}`
+          ).value
         );
 
         if (!eventName || !+startDate || !+endDate) {
           alert("Input all of the required fields");
           return;
         }
-        const event = new model.Event(eventName, startDate, endDate);
 
-        model.saveEvent(event);
+        const newEvent = new model.Event(eventName, startDate, endDate);
+
+        if (event.target.getAttribute("id") === "new") {
+          model.saveEvent(newEvent);
+        } else {
+          model.updateEvent(newEvent, event.target.getAttribute("id"));
+        }
       }
     });
   };
@@ -255,6 +309,33 @@ const Controller = ((model, view, convertDate) => {
     });
   };
 
+  const pagination = () => {
+    const paginationContainer = document.querySelector(view.domstr.pagination);
+
+    paginationContainer.addEventListener("click", (event) => {
+      if (event.target.classList[0] === "event-list_pagination-page-number") {
+        model.State.pageNumber = +event.target.innerHTML;
+
+        init();
+      }
+    });
+  };
+
+  const nextPage = () => {
+    nextPageBtn.addEventListener("click", () => {
+      model.State.pageNumber++;
+      init();
+    });
+  };
+
+  const previousPage = () => {
+    previousPageBtn.addEventListener("click", () => {
+      model.State.pageNumber--;
+
+      init();
+    });
+  };
+
   const bootstrap = () => {
     init();
     addEvent();
@@ -262,6 +343,9 @@ const Controller = ((model, view, convertDate) => {
     deleteEvent();
     saveEvent();
     editEvent();
+    pagination();
+    nextPage();
+    previousPage();
   };
 
   return { bootstrap };
