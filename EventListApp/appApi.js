@@ -1,20 +1,28 @@
 export const appApi = (() => {
-  const getEvents = async () => {
-    let response = await axios.get("http://localhost:3000/events");
 
-    return response.data;
+  const getEvents = async () => {
+    return await $.get("http://localhost:3000/events");
   };
 
   const saveEvent = async (event) => {
-    await axios.post("http://localhost:3000/events", event);
+    await $.post("http://localhost:3000/events", event);
   };
 
   const deleteEvent = async (id) => {
-    await axios.delete(`http://localhost:3000/events/${id}`);
+    await $.ajax({
+      url: `http://localhost:3000/events/${id}`,
+      type: "DELETE",
+    });
+    
   };
 
   const updateEvent = async (event, id) => {
-    await axios.put(`http://localhost:3000/events/${id}`, event);
+
+    await $.ajax({
+      url: `http://localhost:3000/events/${id}`,
+      type: "PUT",
+      data: event
+    });
   };
 
   return {

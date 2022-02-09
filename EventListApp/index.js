@@ -12,7 +12,7 @@ const View = ((convertDate) => {
     previousPageBtn: ".event-list__previous-page-button",
   };
   const render = (element, tmp) => {
-    element.innerHTML = tmp;
+    $(element).html(tmp);
   };
   const createTmp = (arr) => {
     let tmp = "";
@@ -122,7 +122,7 @@ const Model = ((appApi, view) => {
     set eventList(newData) {
       this.#eventList = newData;
 
-      const ele = document.querySelector(view.domstr.eventList);
+      const ele = $(view.domstr.eventList);
       const tmp = view.createTmp(this.#eventList);
       view.render(ele, tmp);
     }
@@ -130,7 +130,7 @@ const Model = ((appApi, view) => {
     set pagination(pages) {
       this.pagesNeeded = pages;
 
-      const ele = document.querySelector(view.domstr.pagination);
+      const ele = $(view.domstr.pagination);
       const tmp = view.paginationTmp(this.pagesNeeded);
       view.render(ele, tmp);
     }
@@ -156,9 +156,9 @@ const Model = ((appApi, view) => {
 const Controller = ((model, view, convertDate) => {
   const state = new model.State();
 
-  const eventListContainer = document.querySelector(view.domstr.eventList);
-  const nextPageBtn = document.querySelector(view.domstr.nextPageBtn);
-  const previousPageBtn = document.querySelector(view.domstr.previousPageBtn);
+  const eventListContainer = $(view.domstr.eventList);
+  const nextPageBtn = $(view.domstr.nextPageBtn);
+  const previousPageBtn = $(view.domstr.previousPageBtn);
 
   const init = async () => {
     let events = await model.getEvents();
@@ -178,67 +178,63 @@ const Controller = ((model, view, convertDate) => {
     state.pagination = pagesNeeded;
 
     if (model.State.pageNumber === renderEventArr.length) {
-      nextPageBtn.setAttribute("disabled", "true");
+      nextPageBtn.attr("disabled", "true");
     } else {
-      nextPageBtn.removeAttribute("disabled");
+      nextPageBtn.removeAttr("disabled");
     }
 
     if (model.State.pageNumber === 1) {
-      previousPageBtn.setAttribute("disabled", "true");
+      previousPageBtn.attr("disabled", "true");
     } else {
-      previousPageBtn.removeAttribute("disabled");
+      previousPageBtn.removeAttr("disabled");
     }
   };
 
   const addEvent = () => {
-    const addBtn = document.querySelector(view.domstr.addBtn);
+    const addBtn = $(view.domstr.addBtn);
 
-    const tableRow = document.createElement("tr");
-    tableRow.className = "event-list__table-row";
-    tableRow.id = "new";
-    tableRow.innerHTML = view.addRowTmp();
+    const tableRow = $("<tr>")
+      .addClass("event-list__table-row event-list__table-row_add")
+      .attr("id", "new")
+      .html(view.addRowTmp());
 
-    addBtn.addEventListener("click", () => {
-      eventListContainer.appendChild(tableRow);
+    addBtn.on("click", () => {
+      eventListContainer.append(tableRow);
     });
   };
 
   const closeEvent = () => {
-    eventListContainer.addEventListener("click", (event) => {
-      if (event.target.classList[0] === "event-list__btn_close")
-        if (event.target.getAttribute("id") === "new") {
-          //code for pre-existing event
-          eventListContainer.removeChild(eventListContainer.lastChild);
+    eventListContainer.on("click", (event) => {
+      if ($(event.target).attr("class") === "event-list__btn_close")
+        if ($(event.target).attr("id") === "new") {
+          $(".event-list__table-row_add").remove();
         } else {
-          document.querySelector(
-            `.button-container-${event.target.getAttribute("id")}`
-          ).innerHTML = view.editDeleteBtnTmp(event.target.getAttribute("id"));
+          $(`.button-container-${$(event.target).attr("id")}`).html(
+            view.editDeleteBtnTmp($(event.target).attr("id"))
+          );
 
-          document
-            .querySelector(
-              `.event-list__name-${event.target.getAttribute("id")}`
-            )
-            .setAttribute("disabled", true);
+          $(`.event-list__name-${$(event.target).attr("id")}`).attr(
+            "disabled",
+            true
+          );
 
-          document
-            .querySelector(
-              `.event-list__start-date-${event.target.getAttribute("id")}`
-            )
-            .setAttribute("disabled", true);
+          $(`.event-list__start-date-${$(event.target).attr("id")}`).attr(
+            "disabled",
+            true
+          );
 
-          document
-            .querySelector(
-              `.event-list__end-date-${event.target.getAttribute("id")}`
-            )
-            .setAttribute("disabled", true);
+          $(`.event-list__end-date-${$(event.target).attr("id")}`).attr(
+            "disabled",
+            true
+          );
         }
     });
   };
 
   const deleteEvent = () => {
-    eventListContainer.addEventListener("click", (event) => {
-      if (event.target.classList[0] === "event-list__btn_delete") {
-        const buttonId = event.target.getAttribute("id");
+    eventListContainer.on("click", (event) => {
+      if ($(event.target).attr("class") === "event-list__btn_delete") {
+        const buttonId = $(event.target).attr("id");
         model.deleteEvent(buttonId);
 
         state.eventList = state.eventList.filter((event) => {
@@ -249,22 +245,18 @@ const Controller = ((model, view, convertDate) => {
   };
 
   const saveEvent = () => {
-    eventListContainer.addEventListener("click", (event) => {
-      if (event.target.classList[0] === "event-list__btn_save") {
-        const eventName = document.querySelector(
-          `.event-list__name-${event.target.getAttribute("id")}`
-        ).value;
+    eventListContainer.on("click", (event) => {
+      if ($(event.target).attr("class") === "event-list__btn_save") {
+        const eventName = $(
+          `.event-list__name-${$(event.target).attr("id")}`
+        ).val();
 
         const startDate = convertDate(
-          document.querySelector(
-            `.event-list__start-date-${event.target.getAttribute("id")}`
-          ).value
+          $(`.event-list__start-date-${$(event.target).attr("id")}`).val()
         );
 
         const endDate = convertDate(
-          document.querySelector(
-            `.event-list__end-date-${event.target.getAttribute("id")}`
-          ).value
+          $(`.event-list__end-date-${$(event.target).attr("id")}`).val()
         );
 
         if (!eventName || !+startDate || !+endDate) {
@@ -274,62 +266,53 @@ const Controller = ((model, view, convertDate) => {
 
         const newEvent = new model.Event(eventName, startDate, endDate);
 
-        if (event.target.getAttribute("id") === "new") {
+        if ($(event.target).attr("id") === "new") {
           model.saveEvent(newEvent);
         } else {
-          model.updateEvent(newEvent, event.target.getAttribute("id"));
+          model.updateEvent(newEvent, $(event.target).attr("id"));
         }
       }
     });
   };
 
   const editEvent = () => {
-    eventListContainer.addEventListener("click", async (event) => {
-      if (event.target.classList[0] === "event-list__btn_edit") {
-        const buttonId = event.target.getAttribute("id");
+    eventListContainer.on("click", async (event) => {
+      if ($(event.target).attr("class") === "event-list__btn_edit") {
+        const buttonId = $(event.target).attr("id");
 
-        document
-          .getElementById(buttonId)
-          .querySelector(`.event-list__name-${buttonId}`)
-          .removeAttribute("disabled");
+        $(`.event-list__name-${buttonId}`).removeAttr("disabled");
 
-        document
-          .getElementById(buttonId)
-          .querySelector(`.event-list__start-date-${buttonId}`)
-          .removeAttribute("disabled");
+        $(`.event-list__start-date-${buttonId}`).removeAttr("disabled");
 
-        document
-          .getElementById(buttonId)
-          .querySelector(`.event-list__end-date-${buttonId}`)
-          .removeAttribute("disabled");
+        $(`.event-list__end-date-${buttonId}`).removeAttr("disabled");
 
-        document.querySelector(`.button-container-${buttonId}`).innerHTML =
-          view.saveCloseBtnTmp(buttonId);
+        $(`.button-container-${buttonId}`).html(view.saveCloseBtnTmp(buttonId));
       }
     });
   };
 
   const pagination = () => {
-    const paginationContainer = document.querySelector(view.domstr.pagination);
+    const paginationContainer = $(view.domstr.pagination);
 
-    paginationContainer.addEventListener("click", (event) => {
-      if (event.target.classList[0] === "event-list_pagination-page-number") {
-        model.State.pageNumber = +event.target.innerHTML;
-
+    paginationContainer.on("click", (event) => {
+      if (
+        $(event.target).attr("class") === "event-list_pagination-page-number"
+      ) {
+        model.State.pageNumber = +$(event.target).html();
         init();
       }
     });
   };
 
   const nextPage = () => {
-    nextPageBtn.addEventListener("click", () => {
+    nextPageBtn.on("click", () => {
       model.State.pageNumber++;
       init();
     });
   };
 
   const previousPage = () => {
-    previousPageBtn.addEventListener("click", () => {
+    previousPageBtn.on("click", () => {
       model.State.pageNumber--;
 
       init();
